@@ -1,8 +1,9 @@
 #include "DTNtupleTriggerAnalyzer.h"
 
 DTNtupleTriggerAnalyzer::DTNtupleTriggerAnalyzer(const TString & inFileName,
-						 const TString & outFileName) :
-  m_outFile(outFileName,"RECREATE"), DTNtupleBaseAnalyzer(inFileName)  
+						 const TString & outFileName ,
+					   std::string outFolder) :
+  m_outFile(outFileName,"RECREATE"), m_outFolder(outFolder), DTNtupleBaseAnalyzer(inFileName)  
 { 
 
   // Configuration parameters to switch on / off
@@ -26,10 +27,10 @@ DTNtupleTriggerAnalyzer::DTNtupleTriggerAnalyzer(const TString & inFileName,
   phiB_Ph2_conv = 1/4096.; // to transform in radians
 
   BXOK_TwinMuxOut = 0;
-  // BXOK_ph2Hw = 3295; // From ntuple based on SX5 run 329705
-  // BXOK_ph2Hw = 3391; // From ntuple based on global run 330160
-  // BXOK_ph2Hw = 3392; // From ntuple based on global run 330163
-  BXOK_ph2Hw = 3366; // From ntuple based on miniDAQ run 330463
+  BXOK_ph2Hw[0] = 3365; // From ntuple based on miniDAQ run 335379 
+  BXOK_ph2Hw[1] = 3365; // From ntuple based on miniDAQ run 335379
+  BXOK_ph2Hw[2] = 3365; // From ntuple based on miniDAQ run 335379
+  BXOK_ph2Hw[3] = 3364; // From ntuple based on miniDAQ run 335379
   BXOK_ph2EmuHb = 0; // to be properly set
   BXOK_ph2EmuAm = 0; // to be properly set
 
@@ -51,6 +52,14 @@ void DTNtupleTriggerAnalyzer::Loop()
   book();
 
   if (fChain == 0) return;
+
+  ofstream f2;
+  f2.open(m_outFolder+"goodBXs.txt");
+  f2  << BXOK_ph2Hw[0] << endl
+      << BXOK_ph2Hw[1] << endl
+      << BXOK_ph2Hw[2] << endl
+      << BXOK_ph2Hw[3] << endl;
+  f2.close();
 
   Long64_t nentries = fChain->GetEntries();
 
@@ -81,6 +90,17 @@ void DTNtupleTriggerAnalyzer::book()
 
   m_outFile.cd();
 
+  m_plots["hOffsets"] = new TH1F("hOffsets",
+				   "Good BXs; Station; Chosen Good BX",
+				   4,-0.5,3.5); 
+
+  std::vector < std::string > chTags = {"MB1","MB2","MB3","MB4"};
+  for (Int_t iCh = 1; iCh < 5; ++iCh) {
+    m_plots["hOffsets"]->GetXaxis()-> SetBinLabel(iCh, chTags.at(iCh-1).c_str());
+    m_plots["hOffsets"]->SetBinContent(iCh, BXOK_ph2Hw[iCh-1]);
+  }
+
+
 
 
   for (Int_t iCh = 1; iCh < 5; ++iCh)
@@ -97,9 +117,14 @@ void DTNtupleTriggerAnalyzer::book()
 	hName = "trigeff_ph2TpgPhiHw_AnyBX_vs_t0" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency AnyBX vs t0; t0; primitive effic.",
-					100,-300.,300.);
+					200,-100.,100.);
 
-	hName = "trigeff_ph2TpgPhiHw_AnyBX_vs_philoc" + iChTag.str();
+	hName = "trigeff_ph2TpgPhiHw_AnyBX_vs_x" + iChTag.str();
+	m_effs[hName] = new TEfficiency(hName.c_str(),
+					"trigger efficiency AnyBX vs x; x; primitive effic.",
+					100,-250.,250.);
+	
+  hName = "trigeff_ph2TpgPhiHw_AnyBX_vs_philoc" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency AnyBX vs philoc; philoc; primitive effic",
 					100,-80.,80.);
@@ -131,7 +156,12 @@ void DTNtupleTriggerAnalyzer::book()
 	hName = "trigeff_ph2TpgPhiHw_BXOK_vs_t0" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency BXOK vs t0; t0; primitive effic.",
-					100,-300.,300.);
+					200,-100.,100.);
+	
+  hName = "trigeff_ph2TpgPhiHw_BXOK_vs_x" + iChTag.str();
+	m_effs[hName] = new TEfficiency(hName.c_str(),
+					"trigger efficiency BXOK vs x; x; primitive effic.",
+					100,-250.,250.);
 
 	hName = "trigeff_ph2TpgPhiHw_BXOK_vs_philoc" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
@@ -165,9 +195,14 @@ void DTNtupleTriggerAnalyzer::book()
 	hName = "trigeff_ph2TpgPhiEmuAm_AnyBX_vs_t0" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency AnyBX vs t0; t0; primitive effic.",
-					100,-300.,300.);
+					200,-100.,100.);
 
-	hName = "trigeff_ph2TpgPhiEmuAm_AnyBX_vs_philoc" + iChTag.str();
+	hName = "trigeff_ph2TpgPhiEmuAm_AnyBX_vs_x" + iChTag.str();
+	m_effs[hName] = new TEfficiency(hName.c_str(),
+					"trigger efficiency AnyBX vs x; x; primitive effic.",
+					100,-250.,250.);
+	
+  hName = "trigeff_ph2TpgPhiEmuAm_AnyBX_vs_philoc" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency AnyBX vs philoc; philoc; primitive effic",
 					100,-80.,80.);
@@ -200,9 +235,14 @@ void DTNtupleTriggerAnalyzer::book()
 	hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_t0" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency BXOK vs t0; t0; primitive effic.",
-					100,-300.,300.);
+					200,-100.,100.);
 
-	hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_philoc" + iChTag.str();
+	hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_x" + iChTag.str();
+	m_effs[hName] = new TEfficiency(hName.c_str(),
+					"trigger efficiency BXOK vs x; x; primitive effic.",
+					100,-300.,300.);
+	
+  hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_philoc" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency BXOK vs philoc; philoc; primitive effic",
 					100,-80.,80.);
@@ -237,9 +277,14 @@ void DTNtupleTriggerAnalyzer::book()
 	hName = "trigeff_TwinMuxOut_AnyBX_vs_t0" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency AnyBX vs t0; t0; primitive effic.",
-					100,-300.,300.);
+					200,-100.,100.);
 
-	hName = "trigeff_TwinMuxOut_AnyBX_vs_philoc" + iChTag.str();
+	hName = "trigeff_TwinMuxOut_AnyBX_vs_x" + iChTag.str();
+	m_effs[hName] = new TEfficiency(hName.c_str(),
+					"trigger efficiency AnyBX vs x; x; primitive effic.",
+					100,-250.,250.);
+	
+  hName = "trigeff_TwinMuxOut_AnyBX_vs_philoc" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency AnyBX vs philoc; philoc; primitive effic",
 					100,-80.,80.);
@@ -271,7 +316,12 @@ void DTNtupleTriggerAnalyzer::book()
 	hName = "trigeff_TwinMuxOut_BXOK_vs_t0" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
 					"trigger efficiency BXOK vs t0; t0; primitive effic.",
-					100,-300.,300.);
+					200,-100.,100.);
+	
+  hName = "trigeff_TwinMuxOut_BXOK_vs_x" + iChTag.str();
+	m_effs[hName] = new TEfficiency(hName.c_str(),
+					"trigger efficiency BXOK vs x; x; primitive effic.",
+					100,-250.,250.);
 
 	hName = "trigeff_TwinMuxOut_BXOK_vs_philoc" + iChTag.str();
 	m_effs[hName] = new TEfficiency(hName.c_str(),
@@ -741,7 +791,8 @@ void DTNtupleTriggerAnalyzer::fill()
 	  std::string  hName = "trigeff_ph2TpgPhiHw_AnyBX_vs_t0" + iChTag.str(); // vs t0
 	  m_effs[hName]->Fill(iBestTpgPhiHw[iMB-1] < 9999, seg_phi_t0->at(iBestSeg[iMB-1]));
 	
-
+	  hName = "trigeff_ph2TpgPhiHw_AnyBX_vs_x" + iChTag.str(); // vs t0
+	  m_effs[hName]->Fill(iBestTpgPhiHw[iMB-1] < 9999, seg_posLoc_x->at(iBestSeg[iMB-1]));
 	
 	  hName = "trigeff_ph2TpgPhiHw_AnyBX_vs_philoc" + iChTag.str();  // vs philoc
 	  m_effs[hName]->Fill(iBestTpgPhiHw[iMB-1] < 9999, philoc);
@@ -763,7 +814,10 @@ void DTNtupleTriggerAnalyzer::fill()
 	  hName = "trigeff_ph2TpgPhiHw_BXOK_vs_t0" + iChTag.str(); // vs t0
 	  m_effs[hName]->Fill(iBestTpgPhiHwBXOK[iMB-1] < 9999, seg_phi_t0->at(iBestSeg[iMB-1]));
 	
-	  hName = "trigeff_ph2TpgPhiHw_BXOK_vs_philoc" + iChTag.str();  // vs philoc
+	  hName = "trigeff_ph2TpgPhiHw_BXOK_vs_x" + iChTag.str(); // vs t0
+	  m_effs[hName]->Fill(iBestTpgPhiHwBXOK[iMB-1] < 9999, seg_posLoc_x->at(iBestSeg[iMB-1]));
+	  
+    hName = "trigeff_ph2TpgPhiHw_BXOK_vs_philoc" + iChTag.str();  // vs philoc
 	  m_effs[hName]->Fill(iBestTpgPhiHwBXOK[iMB-1] < 9999, philoc);
 
 	  hName = "trigeff_ph2TpgPhiHw_BXOK_vs_nHits" + iChTag.str();  // vs nHits
@@ -780,14 +834,17 @@ void DTNtupleTriggerAnalyzer::fill()
 
 	}
 
-	if(m_ph2TpgPhiEmuAm)   {   // ph2TpgPhiEmuHw efficiency 
+	if(m_ph2TpgPhiEmuAm)   {   // ph2TpgPhiEmuAm efficiency 
 
 	  //at AnyBX
   	
 	  hName = "trigeff_ph2TpgPhiEmuAm_AnyBX_vs_t0" + iChTag.str(); // vs t0
 	  m_effs[hName]->Fill(iBestTpgPhiEmuAm[iMB-1] < 9999, seg_phi_t0->at(iBestSeg[iMB-1]));
 	
-	  tan_phi = seg_dirLoc_x->at(iBestSeg[iMB-1])/seg_dirLoc_z->at(iBestSeg[iMB-1]);
+	  hName = "trigeff_ph2TpgPhiEmuAm_AnyBX_vs_x" + iChTag.str(); // vs t0
+	  m_effs[hName]->Fill(iBestTpgPhiEmuAm[iMB-1] < 9999, seg_posLoc_x->at(iBestSeg[iMB-1]));
+	  
+    tan_phi = seg_dirLoc_x->at(iBestSeg[iMB-1])/seg_dirLoc_z->at(iBestSeg[iMB-1]);
 	  philoc = atan(tan_phi)*180/(pi);  // local phi
 	
 	  hName = "trigeff_ph2TpgPhiEmuAm_AnyBX_vs_philoc" + iChTag.str();  // vs philoc
@@ -810,7 +867,10 @@ void DTNtupleTriggerAnalyzer::fill()
 	  hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_t0" + iChTag.str(); // vs t0
 	  m_effs[hName]->Fill(iBestTpgPhiEmuAmBXOK[iMB-1] < 9999, seg_phi_t0->at(iBestSeg[iMB-1]));
 	
-	  hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_philoc" + iChTag.str();  // vs philoc
+	  hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_x" + iChTag.str(); // vs t0
+	  m_effs[hName]->Fill(iBestTpgPhiEmuAmBXOK[iMB-1] < 9999, seg_posLoc_x->at(iBestSeg[iMB-1]));
+	  
+    hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_philoc" + iChTag.str();  // vs philoc
 	  m_effs[hName]->Fill(iBestTpgPhiEmuAmBXOK[iMB-1] < 9999, philoc);
 
 	  hName = "trigeff_ph2TpgPhiEmuAm_BXOK_vs_nHits" + iChTag.str();  // vs nHits
@@ -827,11 +887,14 @@ void DTNtupleTriggerAnalyzer::fill()
 
 	}
 
-	if(m_twinMux)   {   // ph2TpgPhiHw efficiency 
+	if(m_twinMux)   {   // twinmux efficiency 
       
 	  // AnyBX
 	  hName = "trigeff_TwinMuxOut_AnyBX_vs_t0" + iChTag.str();  // vs nHits
 	  m_effs[hName]->Fill(iBestTwinMuxOut[iMB-1] < 9999, seg_phi_t0->at(iBestSeg[iMB-1]));
+	  
+    hName = "trigeff_TwinMuxOut_AnyBX_vs_x" + iChTag.str();  // vs nHits
+	  m_effs[hName]->Fill(iBestTwinMuxOut[iMB-1] < 9999, seg_posLoc_x->at(iBestSeg[iMB-1]));
 
 	  hName = "trigeff_TwinMuxOut_AnyBX_vs_philoc" + iChTag.str();  // vs nHits
 	  m_effs[hName]->Fill(iBestTwinMuxOut[iMB-1] < 9999, philoc);
@@ -853,7 +916,10 @@ void DTNtupleTriggerAnalyzer::fill()
 	  hName = "trigeff_TwinMuxOut_BXOK_vs_t0" + iChTag.str();  // vs nHits
 	  m_effs[hName]->Fill(iBestTwinMuxOutBXOK[iMB-1] < 9999, seg_phi_t0->at(iBestSeg[iMB-1]));
 
-	  hName = "trigeff_TwinMuxOut_BXOK_vs_philoc" + iChTag.str();  // vs nHits
+	  hName = "trigeff_TwinMuxOut_BXOK_vs_x" + iChTag.str();  // vs nHits
+	  m_effs[hName]->Fill(iBestTwinMuxOutBXOK[iMB-1] < 9999, seg_posLoc_x->at(iBestSeg[iMB-1]));
+	  
+    hName = "trigeff_TwinMuxOut_BXOK_vs_philoc" + iChTag.str();  // vs nHits
 	  m_effs[hName]->Fill(iBestTwinMuxOutBXOK[iMB-1] < 9999, philoc);
 
 	  hName = "trigeff_TwinMuxOut_BXOK_vs_nHits" + iChTag.str();  // vs nHits
@@ -955,8 +1021,7 @@ void DTNtupleTriggerAnalyzer::fill()
 	  std::stringstream iChTag;    
 	  iChTag << "MB" << ph2TpgPhiHw_station->at(itr);  
 	  std::string hName = "Phase2Hw_BX_" + iChTag.str();    // BX
-	  m_plots[hName]->Fill(ph2TpgPhiHw_BX->at(itr) - BXOK_ph2Hw);
-
+	  m_plots[hName]->Fill(ph2TpgPhiHw_BX->at(itr) - BXOK_ph2Hw[ph2TpgPhiHw_station->at(itr)-1]);
 
 	  hName = "Phase2Hw_quality_" + iChTag.str();    // quality
 	  m_plots[hName]->Fill(ph2TpgPhiHw_quality->at(itr));
@@ -974,10 +1039,10 @@ void DTNtupleTriggerAnalyzer::fill()
 	  m_plots[hName]->Fill(ph2TpgPhiHw_t0->at(itr));
 
 	  hName = "Phase2Hw_BX_vs_quality_" + iChTag.str();   // Phase2Hw BX vs quality distribution 
-	  m_plots[hName]->Fill(ph2TpgPhiHw_quality->at(itr),ph2TpgPhiHw_BX->at(itr) - BXOK_ph2Hw);
+	  m_plots[hName]->Fill(ph2TpgPhiHw_quality->at(itr),ph2TpgPhiHw_BX->at(itr) - BXOK_ph2Hw[ph2TpgPhiHw_station->at(itr)-1]);
       
   
-	  if(ph2TpgPhiHw_BX->at(itr)==BXOK_ph2Hw)  {  // -------- when BXOK 
+	  if(ph2TpgPhiHw_BX->at(itr)==BXOK_ph2Hw[ph2TpgPhiHw_station->at(itr)-1])  {  // -------- when BXOK 
 
 	    hName = "Phase2Hw_BXOK_quality_" + iChTag.str();    // quality
 	    m_plots[hName]->Fill(ph2TpgPhiHw_quality->at(itr));
@@ -1300,7 +1365,7 @@ UInt_t DTNtupleTriggerAnalyzer::getBestTwinMuxOutBXOK(const Int_t stMu,
       if(whMu  == whTwinMuxOut   &&
 	 secMu == secTwinMuxOut  &&
 	 stMu  == stTwinMuxOut   && 
-	 bxTwinMuxOut == 0       &&
+	 bxTwinMuxOut == 1       &&
 	 qualityTwinMuxOut > bestTwinMuxOutQual
 	 )
 	
@@ -1382,7 +1447,7 @@ UInt_t DTNtupleTriggerAnalyzer::getBestTpgPhiHwBXOK(const Int_t stMu,
       if(whMu  == whTpgPhiHw   &&
 	 secMu == secTpgPhiHw  &&
 	 stMu  == stTpgPhiHw   && 
-	 bxTpgPhiHw == 0       && // -269
+	 bxTpgPhiHw ==   BXOK_ph2Hw[ stTpgPhiHw - 1 ]   && // -269
 	 qualityTpgPhiHw > bestTpgPhiHwQual
 	 )
 	

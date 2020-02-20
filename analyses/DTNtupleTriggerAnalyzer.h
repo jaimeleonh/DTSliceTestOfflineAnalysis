@@ -25,7 +25,8 @@ class DTNtupleTriggerAnalyzer : public DTNtupleBaseAnalyzer
  public:
   
   DTNtupleTriggerAnalyzer( const TString & inFileName,
-			   const TString & outFileName
+			   const TString & outFolder,
+			   std::string outFileName
 			   );
 
   ~DTNtupleTriggerAnalyzer();
@@ -39,6 +40,7 @@ class DTNtupleTriggerAnalyzer : public DTNtupleBaseAnalyzer
   virtual void endJob() override;
   
   TFile m_outFile;
+  std::string m_outFolder;
 
   UInt_t getBestSegm( const Int_t muSt,
 		      const Int_t muSec,
@@ -106,7 +108,7 @@ class DTNtupleTriggerAnalyzer : public DTNtupleBaseAnalyzer
   Double_t phiB_Ph2_conv; // to transform in radians
 
   Int_t BXOK_TwinMuxOut;
-  Int_t BXOK_ph2Hw;  // -269
+  Int_t BXOK_ph2Hw[4];  // -269
   Int_t BXOK_ph2EmuHb; // to be properly set
   Int_t BXOK_ph2EmuAm; // to be properly set
 

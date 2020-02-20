@@ -24,7 +24,7 @@ void runAllAnalyses(TString inputFile, Int_t runNumber)
   segmentAnalysis.PreLoop("Ph2");
   segmentAnalysis.Loop();
 
-  DTNtupleTriggerAnalyzer triggerAnalysis(inputFile, runName + "/trigger/results_trigger.root");
+  DTNtupleTriggerAnalyzer triggerAnalysis(inputFile, runName + "/trigger/results_trigger.root", (runName + "/trigger/").Data());
   triggerAnalysis.Loop();
 
   gSystem->Exec("rm *d *pcm *so");

@@ -14,6 +14,7 @@
 #include <sstream>
 #include <tuple>
 #include <map>
+#include <algorithm>
 
 class WireId
 {
